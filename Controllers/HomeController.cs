@@ -6,6 +6,7 @@ using Npgsql;
 using System.Runtime.InteropServices;
 using ClosedXML.Excel;
 using System.IO;
+using OrderedData.Helpers;
 
 namespace OrderedData.Controllers;
 
@@ -75,17 +76,27 @@ public class HomeController : Controller
             var worksheet = workbook.Worksheets.Add("Users");
             
             // Başlıkları ekle
-            worksheet.Cell(1, 1).Value = "Name";
-            worksheet.Cell(1, 2).Value = "Surname";
-            worksheet.Cell(1, 3).Value = "Job";
+            worksheet.Cell(1, 1).Value = "ID";
+            worksheet.Cell(1, 2).Value = "NAME";
+            worksheet.Cell(1, 3).Value = "SURNAME";
+            worksheet.Cell(1, 4).Value = "JOB";
+            
+            // Başlık stilini ayarla
+            var headerRow = worksheet.Row(1);
+            headerRow.Style.Font.Bold = true;
+            headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
             
             // Verileri ekle
             for (int i = 0; i < users.Count; i++)
             {
-                worksheet.Cell(i + 2, 1).Value = users[i].Name;
-                worksheet.Cell(i + 2, 2).Value = users[i].Surname;
-                worksheet.Cell(i + 2, 3).Value = users[i].Job;
+                worksheet.Cell(i + 2, 1).Value = users[i].Id;
+                worksheet.Cell(i + 2, 2).Value = users[i].Name?.ToUpper();
+                worksheet.Cell(i + 2, 3).Value = users[i].Surname?.ToUpper();
+                worksheet.Cell(i + 2, 4).Value = users[i].Job?.ToUpper();
             }
+            
+            // Sütun genişliklerini otomatik ayarla
+            worksheet.Columns().AdjustToContents();
             
             // Excel dosyasını oluştur
             using (var stream = new MemoryStream())
@@ -96,7 +107,7 @@ public class HomeController : Controller
                 return File(
                     content,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "Users.xlsx"
+                    $"Users_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
                 );
             }
         }
