@@ -37,56 +37,33 @@ public class HomeController : Controller
         
         ViewBag.CurrentPage = page;
         ViewBag.MaxPage = maxPage;
+        ViewBag.TotalUsers = totalUsers;
         return View(pagedUsers);
     }
 
     public IActionResult Privacy()
     {
-        // Önce mevcut verileri temizleyelim
         _context.UsersInfo.RemoveRange(_context.UsersInfo);
         _context.SaveChanges();
 
-        UsersInfoModel user = new UsersInfoModel
+        var users = new List<UsersInfoModel>();
+        var random = new Random();
+
+        for (int i = 1; i <= 1000; i++)
         {
-            Id = 1,
-            Name = "birgul",
-            Surname = "ayaz", 
-            Job = "software engineering"
-        };
+            users.Add(new UsersInfoModel
+            {
+                Id = i,
+                Name = $"{GetRandomName(random)} {i}",
+                Surname = GetRandomSurname(random),
+                Job = GetRandomJob(random)
+            });
+        }
 
-        UsersInfoModel users = new UsersInfoModel
-        {       
-            Id = 2,
-            Name = "büşra", 
-            Surname = "Gülnaz",
-            Job = "economy"
-        };
-
-        UsersInfoModel usersss = new UsersInfoModel
-        {        
-            Id = 3,  
-            Name = "esra",
-            Surname = "ilknaz",
-            Job = "teacher"
-        };
-
-        UsersInfoModel userss = new UsersInfoModel
-        {      Id = 4, 
-            Name = "ahmet",
-            Surname = "ayaz", 
-            Job = "freelancer"
-        };
-
-        List<UsersInfoModel> usersList = new List<UsersInfoModel>();
-        usersList.Add(user);
-        usersList.Add(users); 
-        usersList.Add(usersss);
-        usersList.Add(userss);
-
-        _context.UsersInfo.AddRange(usersList);
+        _context.UsersInfo.AddRange(users);
         _context.SaveChanges();
 
-        return View(usersList);
+        return RedirectToAction("Index");
     }
 
     public IActionResult ExportToExcel()
@@ -125,10 +102,26 @@ public class HomeController : Controller
         }
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
+    private static readonly string[] Names = { 
+        "Ahmet", "Mehmet", "Ayşe", "Fatma", "Ali", "Veli", "Zeynep", "Elif", "Can", "Cem",
+        "Deniz", "Ece", "Emre", "Gül", "Hakan", "İrem", "Kemal", "Leyla", "Murat", "Nur"
+    };
+
+    private static readonly string[] Surnames = { 
+        "Yılmaz", "Demir", "Kaya", "Çelik", "Şahin", "Yıldız", "Özdemir", "Arslan", "Doğan", "Kılıç",
+        "Aydın", "Bulut", "Çetin", "Erdoğan", "Güneş", "Koç", "Kurt", "Öztürk", "Şen", "Yalçın"
+    };
+
+    private static readonly string[] Jobs = { 
+        "Software Engineer", "Teacher", "Doctor", "Lawyer", "Architect", 
+        "Designer", "Manager", "Accountant", "Chef", "Writer",
+        "Data Scientist", "Product Manager", "UX Designer", "DevOps Engineer", 
+        "Business Analyst", "Marketing Specialist", "HR Manager", "Sales Executive",
+        "System Administrator", "Quality Assurance"
+    };
+
+    private string GetRandomName(Random random) => Names[random.Next(Names.Length)];
+    private string GetRandomSurname(Random random) => Surnames[random.Next(Surnames.Length)];
+    private string GetRandomJob(Random random) => Jobs[random.Next(Jobs.Length)];
 }
 
