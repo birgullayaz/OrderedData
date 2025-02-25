@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+@model List<UsersInfoModel>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h2>Users List</h2>
+        <a href="@Url.Action("ExportToExcel")" class="btn btn-success">
+            <i class="fas fa-file-excel"></i> Export to Excel
+        </a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Surname</th>
+                <th>Job</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Name</td>
+                    <td>@user.Surname</td>
+                    <td>@user.Job</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-3">
+        @if (ViewBag.CurrentPage > 1)
+        {
+            <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })" 
+               class="btn btn-secondary">Previous</a>
+        }
+        else
+        {
+            <div></div> <!-- Boş div ile hizalamayı koruyoruz -->
+        }
+
+        @if (Model.Any())
+        {
+            <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })" 
+               class="btn btn-primary">Next</a>
+        }
+    </div>
+</div>
