@@ -1,20 +1,22 @@
-﻿@{
+@using OrderedData.Helpers
+@{
     ViewData["Title"] = "Home Page";
 }
-
 
 @model List<UsersInfoModel>
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between mb-3">
-        <h2>Users List</h2>
+        <h2>Users List (Total: @ViewBag.TotalUsers)</h2>
         <a href="@Url.Action("ExportToExcel")" class="btn btn-success">
             <i class="fas fa-file-excel"></i> Export to Excel
         </a>
     </div>
+
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Name</th>
                 <th>Surname</th>
                 <th>Job</th>
@@ -24,29 +26,71 @@
             @foreach (var user in Model)
             {
                 <tr>
-                    <td>@user.Name</td>
-                    <td>@user.Surname</td>
-                    <td>@user.Job</td>
+                    <td>@user.Id</td>
+                    <td>@Html.ToUpperCase(user.Name)</td>
+                    <td>@Html.ToUpperCase(user.Surname)</td>
+                    <td>@Html.ToUpperCase(user.Job)</td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <div class="d-flex justify-content-between mt-3">
-        @if (ViewBag.CurrentPage > 1)
-        {
-            <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })" 
-               class="btn btn-secondary">Previous</a>
-        }
-        else
-        {
-            <div></div> <!-- Boş div ile hizalamayı koruyoruz -->
-        }
+    <div class="d-flex justify-content-center align-items-center mt-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                @if (ViewBag.CurrentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })">&laquo; Previous</a>
+                    </li>
+                }
 
-        @if (Model.Any())
-        {
-            <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })" 
-               class="btn btn-primary">Next</a>
-        }
+                @{
+                    int startPage = Math.Max(1, ViewBag.CurrentPage - 2);
+                    int endPage = Math.Min(ViewBag.MaxPage, startPage + 4);
+                    startPage = Math.Max(1, endPage - 4);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = 1 })">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                    </li>
+                }
+
+                @if (endPage < ViewBag.MaxPage)
+                {
+                    @if (endPage < ViewBag.MaxPage - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.MaxPage })">@ViewBag.MaxPage</a>
+                    </li>
+                }
+
+                @if (ViewBag.CurrentPage < ViewBag.MaxPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })">Next &raquo;</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+
+    <div class="text-center mt-2">
+        Showing page @ViewBag.CurrentPage of @ViewBag.MaxPage
     </div>
 </div>
