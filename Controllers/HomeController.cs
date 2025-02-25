@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using ClosedXML.Excel;
 using System.IO;
 using OrderedData.Helpers;
+using OrderedData.Services;
 
 namespace OrderedData.Controllers;
 
@@ -14,15 +15,20 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly ApplicationDbContext _context;
+    private readonly LanguageService _languageService;
 
-    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
+    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context, LanguageService languageService)
     {
         _logger = logger;
         _context = context;
+        _languageService = languageService;
     }
 
-    public IActionResult Index(int page = 1)
+    public IActionResult Index(int page = 1, string lang = "en")
     {
+        _languageService.SetLanguage(lang);
+        ViewBag.CurrentLanguage = lang;
+        
         int pageSize = 3;
         var totalUsers = _context.UsersInfo.Count();
         var maxPage = (int)Math.Ceiling(totalUsers / (double)pageSize);
@@ -67,19 +73,20 @@ public class HomeController : Controller
         return RedirectToAction("Index");
     }
 
-    public IActionResult ExportToExcel()
+    public IActionResult ExportToExcel(string lang = "en")
     {
+        _languageService.SetLanguage(lang);
         var users = _context.UsersInfo.OrderBy(u => u.Name).ToList();
         
         using (var workbook = new XLWorkbook())
         {
-            var worksheet = workbook.Worksheets.Add("Users");
+            var worksheet = workbook.Worksheets.Add(_languageService.GetText("UsersList"));
             
-            // Başlıkları ekle
+            // Başlıkları dil dosyasından al
             worksheet.Cell(1, 1).Value = "ID";
-            worksheet.Cell(1, 2).Value = "NAME";
-            worksheet.Cell(1, 3).Value = "SURNAME";
-            worksheet.Cell(1, 4).Value = "JOB";
+            worksheet.Cell(1, 2).Value = _languageService.GetText("Name");
+            worksheet.Cell(1, 3).Value = _languageService.GetText("Surname");
+            worksheet.Cell(1, 4).Value = _languageService.GetText("Job");
             
             // Başlık stilini ayarla
             var headerRow = worksheet.Row(1);
@@ -95,22 +102,27 @@ public class HomeController : Controller
                 worksheet.Cell(i + 2, 4).Value = users[i].Job?.ToUpper();
             }
             
-            // Sütun genişliklerini otomatik ayarla
             worksheet.Columns().AdjustToContents();
             
-            // Excel dosyasını oluştur
             using (var stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
                 var content = stream.ToArray();
                 
+                var fileName = $"{_languageService.GetText("UsersList")}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                
                 return File(
                     content,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    $"Users_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                    fileName
                 );
             }
         }
+    }
+
+    public IActionResult ChangeLanguage(string lang, int page = 1)
+    {
+        return RedirectToAction("Index", new { page, lang });
     }
 
     private static readonly string[] Names = { 

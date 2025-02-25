@@ -1,0 +1,12 @@
+{
+  "UsersList": "Users List",
+  "Total": "Total",
+  "ExportToExcel": "Export to Excel",
+  "Name": "Name",
+  "Surname": "Surname",
+  "Job": "Job",
+  "Previous": "Previous",
+  "Next": "Next",
+  "ShowingPage": "Page {0} of {1}",
+  "Language": "Language"
+} 

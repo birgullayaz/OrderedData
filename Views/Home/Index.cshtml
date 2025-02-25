@@ -1,4 +1,5 @@
-@using OrderedData.Helpers
+﻿@using OrderedData.Helpers
+@inject OrderedData.Services.LanguageService LanguageService
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -7,19 +8,43 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between mb-3">
-        <h2>Users List (Total: @ViewBag.TotalUsers)</h2>
-        <a href="@Url.Action("ExportToExcel")" class="btn btn-success">
-            <i class="fas fa-file-excel"></i> Export to Excel
-        </a>
+        <h2>@LanguageService.GetText("UsersList") (@LanguageService.GetText("Total"): @ViewBag.TotalUsers)</h2>
+        <div>
+            <div class="btn-group me-2">
+                <a href="@Url.Action("ChangeLanguage", new { lang = "tr", page = ViewBag.CurrentPage })" 
+                   class="btn @(ViewBag.CurrentLanguage == "tr" ? "btn-primary" : "btn-outline-primary")">TR</a>
+                <a href="@Url.Action("ChangeLanguage", new { lang = "en", page = ViewBag.CurrentPage })" 
+                   class="btn @(ViewBag.CurrentLanguage == "en" ? "btn-primary" : "btn-outline-primary")">EN</a>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-excel"></i> @LanguageService.GetText("ExportToExcel")
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="@Url.Action("ExportToExcel", new { lang = "tr" })">
+                            <img src="https://flagcdn.com/16x12/tr.png" alt="TR" class="me-2" />
+                            Türkçe Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="@Url.Action("ExportToExcel", new { lang = "en" })">
+                            <img src="https://flagcdn.com/16x12/gb.png" alt="EN" class="me-2" />
+                            English Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>#</th>
-                <th>Name</th>
-                <th>Surname</th>
-                <th>Job</th>
+                <th>@LanguageService.GetText("Name")</th>
+                <th>@LanguageService.GetText("Surname")</th>
+                <th>@LanguageService.GetText("Job")</th>
             </tr>
         </thead>
         <tbody>
@@ -41,7 +66,9 @@
                 @if (ViewBag.CurrentPage > 1)
                 {
                     <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })">&laquo; Previous</a>
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1, lang = ViewBag.CurrentLanguage })">
+                            &laquo; @LanguageService.GetText("Previous")
+                        </a>
                     </li>
                 }
 
@@ -54,7 +81,7 @@
                 @if (startPage > 1)
                 {
                     <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { page = 1 })">1</a>
+                        <a class="page-link" href="@Url.Action("Index", new { page = 1, lang = ViewBag.CurrentLanguage })">1</a>
                     </li>
                     @if (startPage > 2)
                     {
@@ -65,7 +92,7 @@
                 @for (int i = startPage; i <= endPage; i++)
                 {
                     <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                        <a class="page-link" href="@Url.Action("Index", new { page = i, lang = ViewBag.CurrentLanguage })">@i</a>
                     </li>
                 }
 
@@ -76,14 +103,16 @@
                         <li class="page-item disabled"><span class="page-link">...</span></li>
                     }
                     <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.MaxPage })">@ViewBag.MaxPage</a>
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.MaxPage, lang = ViewBag.CurrentLanguage })">@ViewBag.MaxPage</a>
                     </li>
                 }
 
                 @if (ViewBag.CurrentPage < ViewBag.MaxPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })">Next &raquo;</a>
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1, lang = ViewBag.CurrentLanguage })">
+                            @LanguageService.GetText("Next") &raquo;
+                        </a>
                     </li>
                 }
             </ul>
@@ -91,6 +120,6 @@
     </div>
 
     <div class="text-center mt-2">
-        Showing page @ViewBag.CurrentPage of @ViewBag.MaxPage
+        @LanguageService.GetText("ShowingPage").Replace("{0}", ViewBag.CurrentPage.ToString()).Replace("{1}", ViewBag.MaxPage.ToString())
     </div>
 </div>

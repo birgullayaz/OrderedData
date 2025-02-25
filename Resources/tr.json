@@ -1,0 +1,12 @@
+{
+  "UsersList": "Kullanıcı Listesi",
+  "Total": "Toplam",
+  "ExportToExcel": "Excel'e Aktar",
+  "Name": "İsim",
+  "Surname": "Soyisim",
+  "Job": "Meslek",
+  "Previous": "Önceki",
+  "Next": "Sonraki",
+  "ShowingPage": "Sayfa {0} / {1}",
+  "Language": "Dil"
+} 
