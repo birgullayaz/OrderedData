@@ -8,6 +8,8 @@ using ClosedXML.Excel;
 using System.IO;
 using OrderedData.Helpers;
 using OrderedData.Services;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.EntityFrameworkCore;
 
 namespace OrderedData.Controllers;
 
@@ -37,7 +39,8 @@ public class HomeController : Controller
         if (page > maxPage && maxPage > 0) page = maxPage;
 
         var pagedUsers = _context.UsersInfo
-            .OrderBy(u => u.Name)
+            .AsNoTracking()
+            .OrderByDescending(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
@@ -50,27 +53,38 @@ public class HomeController : Controller
 
     public IActionResult Privacy()
     {
-        _context.UsersInfo.RemoveRange(_context.UsersInfo);
-        _context.SaveChanges();
-
-        var users = new List<UsersInfoModel>();
-        var random = new Random();
-
-        for (int i = 1; i <= 1000; i++)
+        try
         {
-            users.Add(new UsersInfoModel
+            // Önce tüm kayıtları sil
+            var allUsers = _context.UsersInfo.ToList();
+            _context.UsersInfo.RemoveRange(allUsers);
+            _context.SaveChanges();
+
+            // Yeni kayıtları ekle
+            var users = new List<UsersInfoModel>();
+            var random = new Random();
+
+            for (int i = 0; i < 3000; i++)
             {
-                Id = i,
-                Name = $"{GetRandomName(random)} {i}",
-                Surname = GetRandomSurname(random),
-                Job = GetRandomJob(random)
-            });
+                users.Add(new UsersInfoModel
+                {
+                    Name = $"{GetRandomName(random)}",
+                    Surname = GetRandomSurname(random),
+                    Job = GetRandomJob(random)
+                });
+            }
+
+            _context.UsersInfo.AddRange(users);
+            _context.SaveChanges();
+
+            return RedirectToAction("Index");
         }
-
-        _context.UsersInfo.AddRange(users);
-        _context.SaveChanges();
-
-        return RedirectToAction("Index");
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Privacy action");
+            TempData["Error"] = "An error occurred while resetting the database.";
+            return RedirectToAction("Index");
+        }
     }
 
     public IActionResult ExportToExcel(string lang = "en")
@@ -82,24 +96,21 @@ public class HomeController : Controller
         {
             var worksheet = workbook.Worksheets.Add(_languageService.GetText("UsersList"));
             
-            // Başlıkları dil dosyasından al
             worksheet.Cell(1, 1).Value = "ID";
-            worksheet.Cell(1, 2).Value = _languageService.GetText("Name");
-            worksheet.Cell(1, 3).Value = _languageService.GetText("Surname");
-            worksheet.Cell(1, 4).Value = _languageService.GetText("Job");
+            worksheet.Cell(1, 2).Value = new UppercaseTagHelper { Text = _languageService.GetText("Name") }.GetUpperText();
+            worksheet.Cell(1, 3).Value = new UppercaseTagHelper { Text = _languageService.GetText("Surname") }.GetUpperText();
+            worksheet.Cell(1, 4).Value = new UppercaseTagHelper { Text = _languageService.GetText("Job") }.GetUpperText();
             
-            // Başlık stilini ayarla
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
             headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
             
-            // Verileri ekle
             for (int i = 0; i < users.Count; i++)
             {
                 worksheet.Cell(i + 2, 1).Value = users[i].Id;
-                worksheet.Cell(i + 2, 2).Value = users[i].Name?.ToUpper();
-                worksheet.Cell(i + 2, 3).Value = users[i].Surname?.ToUpper();
-                worksheet.Cell(i + 2, 4).Value = users[i].Job?.ToUpper();
+                worksheet.Cell(i + 2, 2).Value = new UppercaseTagHelper { Text = users[i].Name }.GetUpperText();
+                worksheet.Cell(i + 2, 3).Value = new UppercaseTagHelper { Text = users[i].Surname }.GetUpperText();
+                worksheet.Cell(i + 2, 4).Value = new UppercaseTagHelper { Text = users[i].Job }.GetUpperText();
             }
             
             worksheet.Columns().AdjustToContents();
@@ -109,7 +120,7 @@ public class HomeController : Controller
                 workbook.SaveAs(stream);
                 var content = stream.ToArray();
                 
-                var fileName = $"{_languageService.GetText("UsersList")}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileName = new UppercaseTagHelper { Text = _languageService.GetText("UsersList") }.GetUpperText() + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".xlsx";
                 
                 return File(
                     content,
@@ -123,6 +134,65 @@ public class HomeController : Controller
     public IActionResult ChangeLanguage(string lang, int page = 1)
     {
         return RedirectToAction("Index", new { page, lang });
+    }
+
+    [HttpGet]
+    public IActionResult NewRegister()
+    {
+        var cities = new Dictionary<int, string>
+        {
+            {1, "Istanbul"},
+            {2, "Ankara"},
+            {3, "Izmir"},
+            {4, "Bursa"},
+            {5, "Antalya"}
+        };
+        
+        ViewBag.Cities = cities;
+        return View();
+    }
+
+    [HttpPost]
+    public IActionResult NewRegister([FromBody] NewRegisterModel model)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(model.Name) || 
+                string.IsNullOrEmpty(model.Surname) || 
+                string.IsNullOrEmpty(model.Job))
+            {
+                return Json(new { success = false, message = "Name, Surname and Job are required" });
+            }
+
+            var usersInfo = new UsersInfoModel
+            {
+                Name = model.Name,
+                Surname = model.Surname,
+                Job = model.Job,
+                City = model.CityId,      // CityId'yi long olarak kaydediyoruz
+                District = model.DistrictId  // DistrictId'yi long olarak kaydediyoruz
+            };
+
+            _context.UsersInfo.Add(usersInfo);
+            var result = _context.SaveChanges();
+
+            // Kayıt başarılı mı kontrol et
+            if (result > 0)
+            {
+                _logger.LogInformation($"New user added: {model.Name} {model.Surname}");
+                return Json(new { success = true, message = "Registration successful!", userId = usersInfo.Id });
+            }
+            else
+            {
+                return Json(new { success = false, message = "Failed to save to database" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in NewRegister");
+            var innerMessage = ex.InnerException?.Message ?? ex.Message;
+            return Json(new { success = false, message = $"Error: {innerMessage}" });
+        }
     }
 
     private static readonly string[] Names = { 
@@ -147,4 +217,16 @@ public class HomeController : Controller
     private string GetRandomSurname(Random random) => Surnames[random.Next(Surnames.Length)];
     private string GetRandomJob(Random random) => Jobs[random.Next(Jobs.Length)];
 }
+
+public static class UppercaseTagHelperExtensions
+{
+    public static string GetUpperText(this UppercaseTagHelper helper)
+    {
+        return helper.Text?.ToUpper() ?? string.Empty;
+    }
+}
+
+
+
+
 
