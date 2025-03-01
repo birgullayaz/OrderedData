@@ -1,6 +1,9 @@
 @model NewRegisterModel
 
 <div class="container mt-4">
+    <!-- Notification alanı -->
+    <div id="notification" class="alert" style="display: none;"></div>
+
     <h2>New Register</h2>
     <form asp-action="NewRegister" method="post">
         <div class="form-group">
@@ -33,6 +36,20 @@
 
 @section Scripts {
     <script>
+        function showNotification(message, isSuccess) {
+            var notification = $('#notification');
+            notification
+                .removeClass('alert-success alert-danger')
+                .addClass(isSuccess ? 'alert-success' : 'alert-danger')
+                .html(message)
+                .fadeIn();
+
+            // 3 saniye sonra kaybol
+            setTimeout(function() {
+                notification.fadeOut();
+            }, 3000);
+        }
+
         $(document).ready(function() {
             // Şehirleri yükle
             $.get('@Url.Action("GetCities", "Select")', function(cities) {
@@ -69,7 +86,7 @@
                 }
             });
 
-            // Ajax form submit
+            // Form submit güncellendi
             $('form').submit(function(e) {
                 e.preventDefault();
                 
@@ -82,21 +99,24 @@
                 };
 
                 $.ajax({
-                    url: '@Url.Action("NewRegister", "Select")',  // Controller'ı Select olarak değiştirdik
+                    url: '@Url.Action("NewRegister", "Select")',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function(response) {
                         if (response.success) {
-                            alert(response.message);
-                            window.location.href = '@Url.Action("Index", "Home")?page=1';
+                            showNotification(response.message, true);
+                            // 2 saniye bekle sonra yönlendir
+                            setTimeout(function() {
+                                window.location.href = '@Url.Action("Index", "Home")?page=1';
+                            }, 2000);
                         } else {
-                            alert('Registration failed: ' + (response.message || 'Unknown error'));
+                            showNotification('Registration failed: ' + (response.message || 'Unknown error'), false);
                         }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log('Error:', jqXHR.responseText);
-                        alert('An error occurred while processing your request.');
+                        showNotification('An error occurred while processing your request.', false);
                     }
                 });
             });
