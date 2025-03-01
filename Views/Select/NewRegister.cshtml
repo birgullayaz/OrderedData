@@ -1,0 +1,105 @@
+@model NewRegisterModel
+
+<div class="container mt-4">
+    <h2>New Register</h2>
+    <form asp-action="NewRegister" method="post">
+        <div class="form-group">
+            <label asp-for="Name">Name</label>
+            <input asp-for="Name" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label asp-for="Surname">Surname</label>
+            <input asp-for="Surname" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label asp-for="Job">Job</label>
+            <input asp-for="Job" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label asp-for="City">City</label>
+            <select asp-for="CityId" id="City" class="form-control" required>
+                <option value="">Select a city</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label asp-for="District">District</label>
+            <select asp-for="DistrictId" id="District" class="form-control" required>
+                <option value="">Select a district</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Şehirleri yükle
+            $.get('@Url.Action("GetCities", "Select")', function(cities) {
+                var citySelect = $('#City');
+                citySelect.empty();
+                citySelect.append('<option value="">Select a city</option>');
+                
+                $.each(cities, function(i, city) {
+                    citySelect.append($('<option></option>')
+                        .attr('value', city.id)
+                        .text(city.name));
+                });
+            });
+            
+            // Şehir seçildiğinde ilçeleri yükle
+            $('#City').change(function() {
+                var cityId = $(this).val();
+                var districtSelect = $('#District');
+                
+                districtSelect.empty();
+                districtSelect.append('<option value="">Select a district</option>');
+                
+                if(cityId) {
+                    // Seçilen city_id'ye göre ilçeleri getir
+                    $.get('@Url.Action("GetDistrictsByCityId", "Select")', { cityId: cityId }, function(districts) {
+                        districts.forEach(function(district) {
+                            districtSelect.append(
+                                $('<option></option>')
+                                    .val(district.id)
+                                    .text(district.name)
+                            );
+                        });
+                    });
+                }
+            });
+
+            // Ajax form submit
+            $('form').submit(function(e) {
+                e.preventDefault();
+                
+                var formData = {
+                    Name: $('#Name').val(),
+                    Surname: $('#Surname').val(),
+                    Job: $('#Job').val(),
+                    CityId: parseInt($('#City').val()),
+                    DistrictId: parseInt($('#District').val())
+                };
+
+                $.ajax({
+                    url: '@Url.Action("NewRegister", "Select")',  // Controller'ı Select olarak değiştirdik
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.href = '@Url.Action("Index", "Home")?page=1';
+                        } else {
+                            alert('Registration failed: ' + (response.message || 'Unknown error'));
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log('Error:', jqXHR.responseText);
+                        alert('An error occurred while processing your request.');
+                    }
+                });
+            });
+        });
+    </script>
+} 
