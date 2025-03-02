@@ -16,8 +16,8 @@ namespace OrderedData.Controllers
 {
     public class SelectController : Controller
     {
-        public SelectController(ApplicationDbContext context) 
-            : base(context)
+        public SelectController(ApplicationDbContext context, ILogger<SelectController> logger) 
+            : base(context, logger)
         {
         }
 
@@ -111,7 +111,9 @@ namespace OrderedData.Controllers
             try
             {
                 // Validation
-                if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.Surname) || string.IsNullOrEmpty(model.Job))
+                if (string.IsNullOrEmpty(model.Name) || 
+                    string.IsNullOrEmpty(model.Surname) || 
+                    string.IsNullOrEmpty(model.Job))
                 {
                     return Json(new { success = false, message = "Required fields are missing" });
                 }
@@ -124,6 +126,7 @@ namespace OrderedData.Controllers
                     return Json(new { success = false, message = "Invalid city or district selection" });
                 }
 
+                // Veriler zaten model içinde büyük harfe çevrildi
                 var usersInfo = new UsersInfoModel
                 {
                     Name = model.Name,
