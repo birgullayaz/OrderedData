@@ -1,0 +1,19 @@
+# C# dosyaları
+*.cs linguist-language=C#
+*.csproj linguist-language=C#
+*.sln linguist-language=C#
+
+# Razor sayfaları
+*.cshtml linguist-language=C#
+
+# JavaScript dosyaları
+*.js linguist-vendored
+
+# CSS dosyaları
+*.css linguist-vendored
+
+# HTML dosyaları
+*.html linguist-vendored
+
+# Vendor dosyaları
+wwwroot/lib/* linguist-vendored 
